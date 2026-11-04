@@ -47,4 +47,5 @@
 
 ## 致谢
 
-流程参考了 [fifteen42/live2d-from-art](https://github.com/fifteen42/live2d-from-art) 及其作者的分享。
+- 流程参考了 [fifteen42/live2d-from-art](https://github.com/fifteen42/live2d-from-art) 及其作者的分享。
+- 感谢**电脑眠眠豹**提供的思路：把 Live2D 放到 Windows 电脑和安卓手机上展示。

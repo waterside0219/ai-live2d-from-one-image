@@ -1,0 +1,88 @@
+{
+  "version": "layer-split-demo",
+  "width": 160,
+  "height": 160,
+  "coordinate_origin": "top-left",
+  "side_convention": "L/R in part names are SCREEN sides; sdk_name gives the CHARACTER-side name used when building the model",
+  "source": {
+    "path": "source.png",
+    "width": 160,
+    "height": 160
+  },
+  "resolution_note": "native canvas, no upscaling",
+  "draw_order": "ascending order; apply every layer mask",
+  "layers": [
+    {
+      "name": "UnderlayFringe",
+      "sdk_name": "UnderlayFringe",
+      "texture": "layers/00-UnderlayFringe.png",
+      "x": 65,
+      "y": 21,
+      "width": 20,
+      "height": 80,
+      "order": 0,
+      "visible": true
+    },
+    {
+      "name": "Face",
+      "sdk_name": "Face",
+      "texture": "layers/01-Face.png",
+      "x": 27,
+      "y": 17,
+      "width": 107,
+      "height": 132,
+      "order": 1,
+      "visible": true
+    },
+    {
+      "name": "EyeWhiteL",
+      "sdk_name": "EyeWhiteR",
+      "texture": "layers/02-EyeWhiteL.png",
+      "x": 52,
+      "y": 68,
+      "width": 38,
+      "height": 20,
+      "order": 2,
+      "visible": true
+    },
+    {
+      "name": "IrisL",
+      "sdk_name": "IrisR",
+      "texture": "layers/03-IrisL.png",
+      "x": 63,
+      "y": 68,
+      "width": 18,
+      "height": 19,
+      "order": 3,
+      "visible": true,
+      "mask": {
+        "texture": "masks/EyeApertureL.png",
+        "x": 52,
+        "y": 68,
+        "purpose": "iris clip; own x/y, larger than the iris crop, does not move with the iris"
+      }
+    },
+    {
+      "name": "UpperLashL",
+      "sdk_name": "UpperLashR",
+      "texture": "layers/04-UpperLashL.png",
+      "x": 51,
+      "y": 62,
+      "width": 40,
+      "height": 12,
+      "order": 4,
+      "visible": true
+    },
+    {
+      "name": "HairFringe",
+      "sdk_name": "HairFringe",
+      "texture": "layers/05-HairFringe.png",
+      "x": 66,
+      "y": 22,
+      "width": 19,
+      "height": 79,
+      "order": 5,
+      "visible": true
+    }
+  ]
+}

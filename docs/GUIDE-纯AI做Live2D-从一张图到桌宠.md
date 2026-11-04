@@ -76,7 +76,7 @@ flowchart TD
 
 ### 0.5 需要准备什么
 
-见第 13 节“最小可执行路径”中的依赖清单。
+见第 13 节“实现流程与示例”中的依赖清单。
 
 ---
 
@@ -451,9 +451,9 @@ flowchart TD
 
 ---
 
-## 13. 最小可执行路径
+## 13. 实现流程与示例
 
-不需要公开角色原画，也能按这个顺序复现。
+下面是我们实际走的流程和关键片段，用来照着写你自己的脚本；本仓库没有公开构建脚本，不能直接运行。
 
 ### 13.1 依赖
 - Python 3 虚拟环境：attrs 26.1.0、numpy 2.5.4、opencv-python-headless 5.0.0.93、pillow 13.0.0、psd-tools 1.25.0（`requirements.lock`）。
@@ -512,9 +512,11 @@ flowchart TD
 const queue = new CubismMotionQueueManager();   // 官方 Framework 5-r.2
 queue.startMotion(idleMotion, false);
 let time = 0;                                   // 累计秒数
+let prev = null;                                // 上一帧时间戳；首帧没有，dt 记 0
 
 function frame(now) {
-  const dt = Math.min(Math.max((now - prev) / 1000, 0), 0.1); prev = now; time += dt;
+  const dt = prev === null ? 0 : Math.min(Math.max((now - prev) / 1000, 0), 0.1);
+  prev = now; time += dt;
   core.parameters.values.set(core.parameters.defaultValues); // 1. 恢复 Core 默认值（不是 loadParameters）
   queue.doUpdateMotion(fm, time);                // 2. 待机动作：传累计秒数，不是 dt
   applyHeadGazeBlink(dt);                        // 3. 外部头部 / 视线 / 眨眼 / 戳脸（参数增量）

@@ -126,7 +126,7 @@ flowchart TD
 | 版本 | 做法 | 结果 |
 |---|---|---|
 | r01 | 原图提取 + 隐藏部分补画，54 层 | Astra 自检就没通过：眼白层混进了虹膜，脸底残留眼镜和发丝，镜框断断续续，几束头发有断片，耳根补画不合格。根因是同一张完整眼睛图被同时当成眼白和虹膜的底图 |
-| r02 | 同一路线，继续修 | 修到一半（虹膜散点问题，见 3.3），10-29 16:01 收到沈砚的指令：“立刻停止 r02 的原图抠像素路线”，改成逐件生成 |
+| r02 | 同一路线，继续修 | 修到一半（虹膜散点问题，见 3.3），10-30 00:01（北京时间；session 记录里是 UTC 10-29 16:01）收到沈砚的指令：“立刻停止 r02 的原图抠像素路线”，改成逐件生成 |
 | r03/r04 | 每个部件单独让 ImageGen 重画；10-30 00:00 又写成硬规定“禁止抠原图像素” | r04 交了 56 层，失败：整体横截面宽度在 y=50 处多出 9.92%，在 y=500 处多出 14.99%；右眼开口偏窄；“画风和神态仍不像原图”；还出现过整张脸被误生成、方形瞳孔 |
 | r05 | 10-30 07:34 阿年纠正：**优先抠图，取不到的嘴内、耳根等才补画** | 默认态可见区域 RGB 差为 0（alpha 差见 3.4）；但单层上问题很多 |
 | r06/r07 | 修隐藏件时动了看得见的像素 | 越改越坏：眼睛像在翻白眼，脖子出现裂缝，头发轮廓边上飘着碎片。作废 |
@@ -247,7 +247,7 @@ flowchart TD
 
 ## 6. 本机预览和录像
 
-**用什么**：`python3 -m http.server`（只绑定 127.0.0.1）、预览页（每个参数一个滑块，加复位、深浅底切换）、Playwright 驱动 Chromium、ffmpeg。
+**用什么**：`python3 -m http.server 18708 --bind 127.0.0.1`（一定要加 `--bind 127.0.0.1`，不加默认监听所有网卡，局域网里谁都能看）、预览页（每个参数一个滑块，加复位、深浅底切换）、Playwright 驱动 Chromium、ffmpeg。
 
 - **按手机实际大小看**：600×1000 视口下的整个人物，然后再看 400% 放大，两种都要和原图并排对照。只看 4 倍放大图会把判断带偏：放大图只说明“原图放大后就是这样”，不能证明一定要换原稿。
 - **画质**：开启 MSAA；按 2 倍空间采样渲染，最后只缩小一次；纹理在图集里按 1:1 放置。录像从 PNG 帧直接一次编码成 H.264，另外附一张无损静帧。之前出现过“录像糊”，原因是预览没开 MSAA，录像还被转码了两次。
@@ -267,7 +267,7 @@ flowchart TD
 
 **原因**：说话时运行端会同时写入 `ParamEyeLSmile/RSmile`（0.08×）和 `ParamMouthForm`（0.4×）。画面左侧的 `BrowR` 网格里包含原图的头发，`ParamEyeRSmile` 会把这整片挪开，露出下面浅色的接缝。r2 的静态“说话”检查漏掉了眼睛微笑这个输入。r3 只解除了这一个网格的附带联动，并用 94 组 Core 对比确认只有它发生了变化。
 
-**闭眼前后改了五版**（每版按“输入问题 → 实际修改 → 剩下的问题”记录）
+**闭眼前后改了四版（r4 → r4b → r4c → r4d）**（每版按“输入问题 → 实际修改 → 剩下的问题”记录）
 
 | 版本 | 输入的问题 | 实际修改 | 剩下的问题 |
 |---|---|---|---|
@@ -433,7 +433,21 @@ flowchart TD
 **提醒**：这些 Windows 现场修复，Astra 原来的测试都没有覆盖到（原测试用的是 Electron API 的 mock，Mac 上也没法跑 Windows PowerShell），以后回归测试要补上。
 
 ### 12.4 怎么验收
-按 `win/阿年试跑步骤.md` 第二节的表格逐项试。每一项都写了“应该看到什么”和“不对时截哪里”。11-04 23:16，全链路在阿年的 Windows 上实测通过。
+逐项试，每一项先写好“应该看到什么”和“不对时截哪里”：
+
+- 启动：右下角透明人物，没有黑色矩形；托盘出现；游戏焦点不被抢走。
+- 穿透：点人物左右空白、头顶字幕区，点击落到后面的游戏；点在人物身上能按住拖动。
+- 拖动：快速按住拖到另一块屏，跟手，松手立刻停，窗口大小不变（125% 缩放下专门试）。
+- 重启恢复：托盘退出再开，位置回来；拔掉副屏再开，回到主屏右下角。
+- 快捷键：F9 / F10 / Ctrl+Alt+L 原功能都在。
+- 侧键：截图那颗只截图、不开麦；说话那颗按住出“在听…”，松开送出。
+- 按住超过 30 秒：到 30 秒只发一次，松开不补发。
+- 麦克风权限关掉或拔掉设备：提示不可用，不崩溃、不发空录音。
+- 120 字长回复：全文可见（用 scrollHeight/clientHeight 查），不和“在听…”重叠；连续两条按顺序播。
+- 声音：只播一次，没有双声；嘴跟音量动，说完合上。
+- 断网：提示未送达，恢复后自动重连，不连续弹窗。
+
+**实测状态（11-04 23:16）**：在沈砚会话**空闲**时，透明显示、字幕、声音、嘴型、眨眼、按住说话 → 转写 → 进沈砚会话 → 回话，全链路在阿年的 Windows 上通过；截图直看在修掉识图解析问题后通过。**会话忙时说话会过期丢弃**（§12.3 第 9 条），这个场景没有通过。上面清单里跨屏、拔副屏、30 秒截断、权限关闭、断网这几项当晚没有逐项实测。
 
 ---
 
@@ -449,7 +463,9 @@ flowchart TD
 - Node + Playwright（用于浏览器检查和录屏）、ffmpeg。
 - 图像生成工具（只用来补画被挡住的部分）。
 
-### 13.2 顺序（概念流程）
+### 13.2 顺序（实现流程，伪步骤）
+
+说明：本仓库只公开方法，不含原画、构建脚本和模型。下面是我们实际走的顺序，命令要按你自己的脚本写；能直接用的公开入口只有：博主的 skill [fifteen42/live2d-from-art](https://github.com/fifteen42/live2d-from-art)（随附 MIT 许可的 py-moc3 序列化器，我们用的是本机 skill 里的快照，没记录上游提交号）、Live2D 官网下载的 Cubism Core、官方 [CubismWebFramework](https://github.com/Live2D/CubismWebFramework) 5-r.2。
 ```text
 0. 检查原图：PNG / RGBA / 尺寸 / alpha 分布，记录 SHA，设为只读
 1. 拆层脚本：原图 → 部件 PNG + 遮挡蒙版 + layout.json + PSD + 静态拼合
@@ -462,7 +478,6 @@ flowchart TD
 8. 录 40 秒视频 → 拆帧 → 手机大小 + 400% 和原图并排验收
 9. 打包运行包（模型资源 + 渲染器 + 许可证），写版本号和回滚基线
 ```
-本仓库对应的命令见 `README.md`“复建与验证”和 `work/v5/DELIVERY-README.md`“从源包重建”。
 
 ### 13.3 分层清单示例（匿名，字段名和真实构建一致）
 ```json
@@ -470,7 +485,7 @@ flowchart TD
   "version": "example-L1",
   "width": 2048, "height": 2048,
   "coordinate_origin": "top-left",
-  "side_convention": "L/R are screen sides, map to character sides in L3",
+  "side_convention": "L/R in part names are SCREEN sides; renamed to CHARACTER sides when building the model (L2)",
   "source": {"path": "reference.png", "sha256": "<sha256>", "width": 1024, "height": 1024},
   "resolution_note": "Exact 2x pixel replication for shared canvas",
   "draw_order": "ascending order; apply every layer mask",
@@ -487,21 +502,30 @@ flowchart TD
   ]
 }
 ```
+**左右要换算**：素材名里的 L/R 是“画面左右”，§4 的参数和 SDK 部件名用“角色自己的左右”，两者正好相反。我们在 L2 建模脚本里用一个 `sdk_name()` 统一换名，比如素材 `EyeWhiteL` → 模型部件 `EyeWhiteR`、`CatEarR` → `EarL`；虹膜、高光、睫毛、闭眼件、眉毛都同样对调。这一步漏了，眼睛和耳朵就会绑反。
+
 要点：坐标都在全局画布上；`visible:false` 表示默认隐藏的动作件（闭眼、口腔）；蒙版有自己的 x/y，不一定等于部件的裁切框。
 
 ### 13.4 每帧渲染顺序
 ```js
-function frame(dt) {
-  dt = Math.min(dt, 0.1);
-  model.loadParameters();                        // 1. 恢复基础参数
-  motionManager.updateMotion(model, dt);         // 2. 待机动作（贝塞尔）
-  applyHeadGazeBlink();                          // 3. 外部头部 / 视线 / 眨眼 / 戳脸
-  applyMouthFromAudio(dt); applyEarTouch(dt);    // 4. 口型与表情、摸耳输入
-  physics.evaluate(model, dt);                   // 5. 物理（输出不回灌）
-  model.update();                                // 6. Core 更新
+// 和我们 r4d 实际代码一致：每帧先把参数恢复成 Core 默认值，再叠加。
+const queue = new CubismMotionQueueManager();   // 官方 Framework 5-r.2
+queue.startMotion(idleMotion, false);
+let time = 0;                                   // 累计秒数
+
+function frame(now) {
+  const dt = Math.min(Math.max((now - prev) / 1000, 0), 0.1); prev = now; time += dt;
+  core.parameters.values.set(core.parameters.defaultValues); // 1. 恢复 Core 默认值（不是 loadParameters）
+  queue.doUpdateMotion(fm, time);                // 2. 待机动作：传累计秒数，不是 dt
+  applyHeadGazeBlink(dt);                        // 3. 外部头部 / 视线 / 眨眼 / 戳脸（参数增量）
+  applyMouthFromAudio(dt); applyEarTouch(dt);    // 4. 口型（MouthForm = 0.4*mouth/0.85）、摸耳输入
+  physics.evaluate(fm, dt);                      // 5. 物理（输出不回灌成下一帧输入）
+  core.update();                                 // 6. Core 更新
   drawMeshes();                                  // 7. 普通网格
-  drawSourceOpacityLast();                       // 8. 如果有修正层：ZERO,SRC_ALPHA 一起乘 RGB 和 alpha
+  drawSourceOpacityLast();                       // 8. 如果有修正层：blendFuncSeparate(ZERO,SRC_ALPHA,ZERO,SRC_ALPHA)
 }
+// fm 是 CubismModel，core 是它底下的 Core 模型对象。
+// 另一条路是 saveParameters()/loadParameters()：要先存一份基础值再每帧恢复。两种别混着用。
 ```
 
 ---
